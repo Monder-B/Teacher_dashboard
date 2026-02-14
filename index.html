@@ -499,59 +499,50 @@
         }
 
         // Load dashboard data
-        async function loadDashboard() {
-            loadingOverlay.classList.add('show');
-
-            try {
-                const response = await fetch(`${WORKER_BASE_URL}/dashboard/today`, {
-                    method: 'GET',
-                    credentials: 'include'
-                });
-
-                if (response.status === 401) {
-                    // Not authenticated
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                const data = await response.json();
-
-                if (data.success && data.data) {
-                    const { stats, entries } = data.data;
-
-                    // Update stats
-                    attendanceCount.textContent = stats.validCount || 0;
-                    totalAttempts.textContent = stats.totalCount || 0;
-                    lastEntry.textContent = stats.lastEntryTime 
-                        ? formatTime(stats.lastEntryTime) 
-                        : '--';
-
-                    // Update table info
-                    tableInfo.textContent = `${entries.length} تسجيل`;
-
-                    // Update table
-                    if (entries.length === 0) {
-                        showEmptyState();
-                    } else {
-                        tableBody.innerHTML = entries.map(entry => `
-                            <tr>
-                                <td>${formatTime(entry.timestamp)}</td>
-                                <td><strong>${entry.studentNumber || '--'}</strong></td>
-                                <td>${entry.studentName || '--'}</td>
-                                <td>${entry.level || '--'}</td>
-                                <td>${getStatusBadge(entry.status)}</td>
-                            </tr>
-                        `).join('');
-                    }
-                }
-
-            } catch (error) {
-                console.error('Error loading dashboard:', error);
-                alert('حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى');
-            } finally {
-                loadingOverlay.classList.remove('show');
-            }
+        async function loadDashboard(showLoader = true) {
+    if (showLoader) loadingOverlay.classList.add('show');
+    try {
+        const response = await fetch(`${WORKER_BASE_URL}/dashboard/today`, {
+        method: "GET",
+        credentials: "include",
+        });
+        if (response.status === 401) {
+        window.location.href = "login.html";
+        return;
         }
+        const data = await response.json();
+        if (data.success && data.data) {
+        const { stats, entries } = data.data;
+        attendanceCount.textContent = stats.validCount || 0;
+        totalAttempts.textContent = stats.totalCount || 0;
+        lastEntry.textContent = stats.lastEntryTime ? formatTime(stats.lastEntryTime) : "--";
+        tableInfo.textContent = `${entries.length} تسجيل`;
+        if (entries.length === 0) {
+            showEmptyState();
+        } else {
+            tableBody.innerHTML = entries
+            .map(
+                (entry) => `
+                <tr>
+                    <td>${formatTime(entry.timestamp)}</td>
+                    <td><strong>${entry.studentNumber || "--"}</strong></td>
+                    <td>${entry.studentName || "--"}</td>
+                    <td>${entry.level || "--"}</td>
+                    <td>${getStatusBadge(entry.status)}</td>
+                </tr>
+                `
+            )
+            .join("");
+        }
+        }
+    } catch (error) {
+        console.error("Error loading dashboard:", error);
+        // نخلي alert غير كي يكون showLoader (يعني أول تحميل/تحديث يدوي)
+        if (showLoader) alert("حدث خطأ في تحميل البيانات. يرجى المحاولة مرة أخرى");
+    } finally {
+        if (showLoader) loadingOverlay.classList.remove("show");
+    }
+    }
 
         // Logout
         async function logout() {
@@ -574,15 +565,15 @@
         }
 
         // Event listeners
-        refreshBtn.addEventListener('click', loadDashboard);
+        refreshBtn.addEventListener('click',()=> loadDashboard(true));
         logoutBtn.addEventListener('click', logout);
 
         // Auto-refresh every 30 seconds
-        setInterval(loadDashboard, 30000);
+        setInterval(() => loadDashboard(false), 60000);
 
         // Initialize
         updateDateDisplay();
-        loadDashboard();
+        loadDashboard(true);
 
         // Update date every minute
         setInterval(updateDateDisplay, 60000);
