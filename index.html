@@ -507,6 +507,7 @@
         credentials: "include",
         });
         if (response.status === 401) {
+            if(showLoader)
         window.location.href = "login.html";
         return;
         }
@@ -573,7 +574,7 @@
 
         // Initialize
         updateDateDisplay();
-        loadDashboard(true);
+        loadDashboard();
 
         // Update date every minute
         setInterval(updateDateDisplay, 60000);
